@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+pydantic
+sqlalchemy
+rich
+watchfiles
+python-dotenv
+psycopg2-binary
