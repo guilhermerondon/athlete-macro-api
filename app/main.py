@@ -10,77 +10,87 @@ from app.models.macro_history import MacroHistory
 from rich.console import Console
 from rich.table import Table
 
-# Instância do Console Rich para logs maravilhosos no terminal
+# Instância do Console Rich para logs de alta performance no terminal
 console = Console()
 
-# Inicializa o banco de dados (Cria a tabela se não existir)
+# Inicializa o banco de dados (Cria as tabelas no PostgreSQL se não existirem)
 Base.metadata.create_all(bind=engine)
 
 description_md = """
 # Modern Dark SaaS API 🚀
 Bem-vindo à **Fitness API** do meu portfólio!
 
-Esta aplicação demonstra minha proficiência em **Python & Backend**:
+Esta aplicação demonstra proficiência em **Python & Backend**:
 * **Linguagem:** Python (FastAPI)
 * **Design Pattern:** Injeção de Dependências & Validação via Pydantic
 * **Banco de Dados:** PostgreSQL via SQLAlchemy ORM
-* **Deploy:** Preparado para Docker & Nuvem
-
----
-### Como funciona?
-Envie seus dados físicos no endpoint `/macros` e o sistema aplicará regras de negócio isoladas para sugerir a melhor distribuição de Proteínas, Carboidratos e Gorduras.
+* **Deploy:** Infraestrutura Escalável em Nuvem
 """
 
 app = FastAPI(
     title="Fitness API - Guilherme Rondon",
     description=description_md,
     version="1.0.0",
-    # Configuração de tema escuro para os blocos de código do Swagger UI
-    swagger_ui_parameters={"syntaxHighlight.theme": "monokai"}
+    swagger_ui_parameters={"syntaxHighlight.theme": "monokai"},
 )
 
-# Configuração de CORS para permitir o frontend Angular
-frontend_url = os.getenv("FRONTEND_URL", "http://localhost:4200")
+# --- CONFIGURAÇÃO DE SEGURANÇA E CONECTIVIDADE (CORS) ---
+# Sincronizado com a variável 'URL_FRONTEND' do painel Railway
+frontend_url = os.getenv("URL_FRONTEND", "http://localhost:4200").strip("/")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200", "http://127.0.0.1:4200", frontend_url],
+    allow_origins=[
+        "http://localhost:4200",
+        "http://127.0.0.1:4200",
+        frontend_url,
+        f"{frontend_url}/",  # Garante compatibilidade com barras extras
+    ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.on_event("startup")
 def startup_event():
     """
-    Imprime um log bonito no terminal assim que o servidor iniciar.
+    Log de inicialização para monitoramento de saúde do container.
     """
-    console.print("\n[bold blue]🚀 API Iniciada: Fitness API - Guilherme Rondon[/bold blue]")
-    console.print("[bold cyan]✓[/bold cyan] [cyan]FastAPI rodando na porta 8000[/cyan]")
-    console.print("[bold yellow]✓[/bold yellow] [yellow]Conexão com PostgreSQL estabelecida[/yellow]\n")
+    console.print(
+        "\n[bold blue]🚀 API Iniciada: Fitness API - Guilherme Rondon[/bold blue]"
+    )
+    console.print(
+        f"[bold cyan]✓[/bold cyan] [cyan]CORS configurado para:[/cyan] {frontend_url}"
+    )
+    console.print(
+        "[bold yellow]✓[/bold yellow] [yellow]Conexão com PostgreSQL estabelecida[/yellow]\n"
+    )
+
 
 @app.get("/")
 def health_check():
-    return {"status": "ok", "message": "Fitness API with PostgreSQL is running!"}
+    return {
+        "status": "ok",
+        "message": "Fitness API with PostgreSQL is running!",
+        "environment": "Production",
+    }
+
 
 @app.post("/macros", response_model=MacroResponse)
 def calculate_macros(request: MacroRequest, db: Session = Depends(get_db)):
     """
-    Endpoint principal para cálculo de macros.
-    
-    - Recebe o payload validado pelo Pydantic.
-    - Delega o cálculo para o módulo lógico (`calculator.py`).
-    - Salva o registro completo na tabela `macro_history` do PostgreSQL.
-    - Registra um log elegante no terminal usando a biblioteca 'rich'.
+    Endpoint principal: Processa dados físicos e persiste o histórico no banco.
     """
-    # 1. Calcula as macros usando a camada de regra de negócio
+    # 1. Camada de Regra de Negócio: Cálculo de macros isolado
     resultado = calcular_macros(
         peso=request.peso,
         altura=request.altura,
         idade=request.idade,
-        objetivo=request.objetivo
+        objetivo=request.objetivo,
     )
-    
-    # 2. Mapeia para o Modelo ORM do banco de dados
+
+    # 2. Persistência: Mapeamento para o Modelo ORM
     history_record = MacroHistory(
         peso=request.peso,
         altura=request.altura,
@@ -89,24 +99,24 @@ def calculate_macros(request: MacroRequest, db: Session = Depends(get_db)):
         proteina=resultado["proteinas"],
         carbo=resultado["carboidratos"],
         gordura=resultado["gorduras"],
-        calorias_totais=resultado["calorias_totais"]
+        calorias_totais=resultado["calorias_totais"],
     )
-    
-    # 3. Salva a transação no banco (Persistência)
+
+    # 3. Transação Atômica no PostgreSQL
     db.add(history_record)
     db.commit()
-    
-    # Renderização da Tabela de Logs via Rich
-    table = Table(title="[bold blue]Novo Cálculo Realizado[/bold blue]", show_header=True, header_style="bold magenta")
-    table.add_column("Input / Output", style="cyan")
+
+    # Logs Visuais (Rich) para facilitar o Debugging na nuvem
+    table = Table(
+        title="[bold blue]Novo Cálculo Realizado[/bold blue]", show_header=True
+    )
+    table.add_column("Métrica", style="cyan")
     table.add_column("Valor", style="yellow")
-    
-    table.add_row("Peso (kg)", str(request.peso))
-    table.add_row("Objetivo", request.objetivo.upper())
-    table.add_row("Calorias Calculadas", f"{resultado['calorias_totais']} kcal")
+
+    table.add_row("Peso Informado", f"{request.peso} kg")
+    table.add_row("Calorias Totais", f"{resultado['calorias_totais']} kcal")
     table.add_row("Proteínas", f"{resultado['proteinas']} g")
-    
+
     console.print(table)
-    
-    # 4. Retorna a resposta ao usuário baseada no Schema
+
     return MacroResponse(**resultado)
