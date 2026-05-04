@@ -42,16 +42,16 @@ frontend_url_env = os.getenv("URL_FRONTEND", "http://localhost:4200").strip("/")
 origins = [
     "http://localhost:4200",
     "http://127.0.0.1:4200",
-    "https://guilhermerondon-interface.vercel.app", # URL de Produção (Fixa)
-    frontend_url_env,                               # URL do Railway (Dinâmica)
-    f"{frontend_url_env}/"                          # Compatibilidade com barra final
+    "https://guilhermerondon-interface.vercel.app",  # URL de Produção (Fixa)
+    frontend_url_env,  # URL do Railway (Dinâmica)
+    f"{frontend_url_env}/",  # Compatibilidade com barra final
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"], # Garante que GET, POST e OPTIONS funcionem
+    allow_methods=["*"],  # Garante que GET, POST e OPTIONS funcionem
     allow_headers=["*"],
 )
 
@@ -64,8 +64,9 @@ def startup_event():
     console.print(
         "\n[bold blue]🚀 API Iniciada: Fitness API - Guilherme Rondon[/bold blue]"
     )
+    # AJUSTADO: Agora usando o nome correto da variável definida no topo do código
     console.print(
-        f"[bold cyan]✓[/bold cyan] [cyan]CORS configurado para:[/cyan] {frontend_url}"
+        f"[bold cyan]✓[/bold cyan] [cyan]CORS configurado para:[/cyan] {frontend_url_env}"
     )
     console.print(
         "[bold yellow]✓[/bold yellow] [yellow]Conexão com PostgreSQL estabelecida[/yellow]\n"
