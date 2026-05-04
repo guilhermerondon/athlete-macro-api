@@ -36,18 +36,22 @@ app = FastAPI(
 
 # --- CONFIGURAÇÃO DE SEGURANÇA E CONECTIVIDADE (CORS) ---
 # Sincronizado com a variável 'URL_FRONTEND' do painel Railway
-frontend_url = os.getenv("URL_FRONTEND", "http://localhost:4200").strip("/")
+frontend_url_env = os.getenv("URL_FRONTEND", "http://localhost:4200").strip("/")
+
+# Lista de origens autorizadas (Produção + Preview + Local)
+origins = [
+    "http://localhost:4200",
+    "http://127.0.0.1:4200",
+    "https://guilhermerondon-interface.vercel.app", # URL de Produção (Fixa)
+    frontend_url_env,                               # URL do Railway (Dinâmica)
+    f"{frontend_url_env}/"                          # Compatibilidade com barra final
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:4200",
-        "http://127.0.0.1:4200",
-        frontend_url,
-        f"{frontend_url}/",  # Garante compatibilidade com barras extras
-    ],
+    allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["*"], # Garante que GET, POST e OPTIONS funcionem
     allow_headers=["*"],
 )
 
