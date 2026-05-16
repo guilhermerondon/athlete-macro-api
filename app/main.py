@@ -73,8 +73,13 @@ def startup_event():
     )
 
 
-@app.get("/")
+@app.get("/health")
 def health_check():
+    return {"status": "healthy"}
+
+
+@app.get("/")
+def root():
     return {
         "status": "ok",
         "message": "Fitness API with PostgreSQL is running!",
