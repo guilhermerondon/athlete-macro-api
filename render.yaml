@@ -8,6 +8,6 @@ services:
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
-        value: postgresql://postgres:gui16maria22%4003@db.jduijfkxcikpwvyrvrap.supabase.co:5432/postgres
+        value: postgresql://postgres.jduijfkxcikpwvyrvrap:gui16maria22%4003@aws-1-sa-east-1.pooler.supabase.com:5432/postgres
       - key: URL_FRONTEND
         value: https://guilhermerondon-interface.vercel.app
