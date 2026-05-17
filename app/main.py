@@ -40,6 +40,8 @@ frontend_url_env = os.getenv("URL_FRONTEND", "http://localhost:4200").strip("/")
 
 # Lista de origens autorizadas (Produção + Preview + Local)
 origins = [
+    "https://guilhermerondon.com",
+    "https://www.guilhermerondon.com",
     "http://localhost:4200",
     "http://127.0.0.1:4200",
     "https://guilhermerondon-interface.vercel.app",  # URL de Produção (Fixa)
